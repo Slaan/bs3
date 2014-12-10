@@ -7,7 +7,7 @@ CFLAGS   = -std=c99 -Wall -I.
 
 LINKER   = gcc -o
 # linking flags here
-LFLAGS   = -Wall -I. -lm -pthread
+LFLAGS   = -Wall -lm -pthread
 
 # change these to set the proper directories where each files shoould be
 SRCDIR   = src

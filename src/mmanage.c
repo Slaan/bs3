@@ -13,12 +13,12 @@
  * This process is initiating the shared memory, so
  * it has to be started prior to the vmaccess process
  *
- * TODO:
- * currently nothing
  * */
 
 #include "mmanage.h"
 #include "stdbool.h"
+
+#define VMEM_ALGO VMEM_ALGO_CLOCK
 
 struct vmem_struct *vmem = NULL;
 FILE *pagefile = NULL;
@@ -28,94 +28,95 @@ int signal_number = 0;          /* Received signal */
 int
 main(void)
 {
-    struct sigaction sigact;
-
-    /* Init pagefile */
-    init_pagefile(MMANAGE_PFNAME);
-    if(!pagefile) {
-        perror("Error creating pagefile");
-        exit(EXIT_FAILURE);
-    }
-
-    /* Open logfile */
-    logfile = fopen(MMANAGE_LOGFNAME, "w");
-    if(!logfile) {
-        perror("Error creating logfile");
-        exit(EXIT_FAILURE);
-    }
-
-    /* Create shared memory and init vmem structure */
-    vmem_init();
-    if(!vmem) {
-        perror("Error initialising vmem");
-        exit(EXIT_FAILURE);
-    }
+  struct sigaction sigact;
+  /* Init pagefile */
+  init_pagefile(MMANAGE_PFNAME);
+  if(!pagefile) {
+    perror("Error creating pagefile\n");
+    exit(EXIT_FAILURE);
+  }
 #ifdef DEBUG_MESSAGES
-    else {
-        fprintf(stderr, "vmem successfully created\n");
-    }
+  else {
+    fprintf(stderr, "pagefile successfully created\n");
+  }
 #endif /* DEBUG_MESSAGES */
+  /* Open logfile */
+  logfile = fopen(MMANAGE_LOGFNAME, "w");
+  if(!logfile) {
+    perror("Error creating logfile");
+    exit(EXIT_FAILURE);
+  }
 
-    /* Setup signal handler */
-    /* Handler for USR1 */
-    sigact.sa_handler = sighandler;
-    sigemptyset(&sigact.sa_mask);
-    sigact.sa_flags = 0;
-    if(sigaction(SIGUSR1, &sigact, NULL) == -1) {
-        perror("Error installing signal handler for USR1");
-        exit(EXIT_FAILURE);
-    }
+  /* Create shared memory and init vmem structure */
+  vmem_init();
+  if(!vmem) {
+    perror("Error initialising vmem");
+    exit(EXIT_FAILURE);
+  }
 #ifdef DEBUG_MESSAGES
-    else {
-        fprintf(stderr, "USR1 handler successfully installed\n");
-    }
+  else {
+    fprintf(stderr, "vmem successfully created\n");
+  }
 #endif /* DEBUG_MESSAGES */
-
-    if(sigaction(SIGUSR2, &sigact, NULL) == -1) {
-        perror("Error installing signal handler for USR2");
-        exit(EXIT_FAILURE);
-    }
+  /* Setup signal handler */
+  /* Handler for USR1 */
+  sigact.sa_handler = sighandler;
+  sigemptyset(&sigact.sa_mask);
+  sigact.sa_flags = 0;
+  if(sigaction(SIGUSR1, &sigact, NULL) == -1) {
+    perror("Error installing signal handler for USR1");
+    exit(EXIT_FAILURE);
+  }
 #ifdef DEBUG_MESSAGES
-    else {
-        fprintf(stderr, "USR2 handler successfully installed\n");
-    }
+  else {
+    fprintf(stderr, "USR1 handler successfully installed\n");
+  }
 #endif /* DEBUG_MESSAGES */
-
-    if(sigaction(SIGINT, &sigact, NULL) == -1) {
-        perror("Error installing signal handler for INT");
-        exit(EXIT_FAILURE);
-    }
+  if(sigaction(SIGUSR2, &sigact, NULL) == -1) {
+    perror("Error installing signal handler for USR2");
+    exit(EXIT_FAILURE);
+  }
 #ifdef DEBUG_MESSAGES
-    else {
-        fprintf(stderr, "INT handler successfully installed\n");
+  else {
+    fprintf(stderr, "USR2 handler successfully installed\n");
+  }
+#endif /* DEBUG_MESSAGES */
+  if(sigaction(SIGINT, &sigact, NULL) == -1) {
+    perror("Error installing signal handler for INT");
+    exit(EXIT_FAILURE);
+  }
+#ifdef DEBUG_MESSAGES
+  else {
+    fprintf(stderr, "INT handler successfully installed\n");
+  }
+#endif /* DEBUG_MESSAGES */
+  /* Signal processing loop */
+  while(1) 
+  {
+    signal_number = 0;
+    pause();
+    if(signal_number == SIGUSR1) 
+    {  /* Page fault */
+#ifdef DEBUG_MESSAGES
+      fprintf(stderr, "Processed SIGUSR1\n");
+#endif /* DEBUG_MESSAGES */
+      signal_number = 0;
     }
-#endif /* DEBUG_MESSAGES */
-
-    /* Signal processing loop */
-    while(1) {
-        signal_number = 0;
-        pause();
-        if(signal_number == SIGUSR1) {  /* Page fault */
+    else if(signal_number == SIGUSR2) 
+    {     /* PT dump */
 #ifdef DEBUG_MESSAGES
-            fprintf(stderr, "Processed SIGUSR1\n");
+      fprintf(stderr, "Processed SIGUSR2\n");
 #endif /* DEBUG_MESSAGES */
-            signal_number = 0;
-        }
-        else if(signal_number == SIGUSR2) {     /* PT dump */
-#ifdef DEBUG_MESSAGES
-            fprintf(stderr, "Processed SIGUSR2\n");
-#endif /* DEBUG_MESSAGES */
-            signal_number = 0;
-        }
-        else if(signal_number == SIGINT) {
-#ifdef DEBUG_MESSAGES
-            fprintf(stderr, "Processed SIGINT\n");
-#endif /* DEBUG_MESSAGES */
-        }
+      signal_number = 0;
     }
-
-
-    return 0;
+    else if(signal_number == SIGINT) 
+    {
+#ifdef DEBUG_MESSAGES
+      fprintf(stderr, "Processed SIGINT\n");
+#endif /* DEBUG_MESSAGES */
+    }
+  }
+  return 0;
 }
 
 /* Please DO keep this function unmodified! */
@@ -141,7 +142,7 @@ sighandler(int signo)
                   break;
      case SIGINT: cleanup();
                   exit(EXIT_SUCCESS);
-         default: // nop
+         default: break;// nop
   }
 }
 
@@ -182,9 +183,9 @@ allocate_page(void)
     frame = search_bitmap();
     if(frame != VOID_IDX) 
     {
-      printf(stderr, "Found free frame no %d, allocation page\n", frame);
+      fprintf(stderr, "Found free frame no %d, allocation page\n", frame);
       update_pt(frame);
-      ferch_page(vmem->adm.req_pageno);
+      fetch_page(vmem->adm.req_pageno);
     } else {
       frame = find_remove_frame();
     }
@@ -228,9 +229,9 @@ store_page(int pt_idx)
   int offset  = pt_idx * sizeof(int) * VMEM_PAGESIZE;
   int frame   = vmem->pt.entries[pt_idx].frame;
   int *pstart = &(vmem->data[frame * VMEM_PAGESIZE]);
-  ifseek(pagefile, offset, SEEK_SET);
+  fseek(pagefile, offset, SEEK_SET);
   /* TODO: impl stuff */
-  write(pstart, sizeof(int), VMEM_PAGESIZE, pagefile);
+  fwrite(pstart, sizeof(int), VMEM_PAGESIZE, pagefile);
 
 }
 
@@ -250,8 +251,7 @@ update_pt(int frame)
   vmem->pt.entries[page_idx].flags     |= PTF_USED | PTF_PRESENT;
   vmem->pt.entries[page_idx].flags     &= ~PTF_DIRTY;
   vmem->pt.entries[page_idx].frame      = frame;
-  vmem->pt.entries[page_idx].startcount = vmem->adm.g_count;
-  vmem->pt.entries[page_idx].count      = 0; 
+  vmem->pt.entries[page_idx].count = vmem->adm.g_count;
 }
 
 int
@@ -276,6 +276,7 @@ find_remove_fifo(void)
 
 }
 
+// least recently used (F6, S53)
 int
 find_remove_lru(void)
 {
@@ -312,25 +313,49 @@ find_remove_clock(void)
 int
 search_bitmap(void)
 {
-
+  int i;
+  int free_bit = VOID_IDX;
+  for(i = 0; i < VMEM_BMSIZE; i++) 
+  {
+    Bmword bitmap = vmem->adm.bitmap[i];
+    Bmword mask   = (i == (VMEM_BMSIZE - 1) ? VMEM_LASTBMMASK : 0);
+    free_bit = find_free_bit(bitmap, mask);
+    if(free_bit != VOID_IDX) 
+    {
+      break;
+    }
+  }
+  return free_bit;
 }
 
 int 
 find_free_bit(Bmword bmword, Bmword mask)
 {
-
+  int     bit     = VOID_IDX;
+  Bmword  bitmask = 1;
+  bmword |= mask;
+  for(bit = 0; bit < VMEM_BITS_PER_BMWORD; bit++)
+  {
+    if(!(bmword & bitmask))
+    {
+      break;
+    }
+    bitmask <<= 1;
+  }
+  return ((bit < VMEM_BITS_PER_BMWORD) ? bit : VOID_IDX);
 }
 
 void
 init_pagefile(const char* pfname)
 {
-
+    /* Create and open pagefile*/
+    pagefile = fopen(pfname, "w");
 }
 
 void
 cleanup(void)
 {
-
+    
 }
 
 void dump_pt(void)
