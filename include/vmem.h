@@ -34,9 +34,9 @@ typedef unsigned  int Bmword;    /* Frame bitmap */
 #define VMEM_BMSIZE     ((VMEM_NFRAMES - 1) / VMEM_BITS_PER_BMWORD + 1)
 
 /* Page Table */
-#define PTF_PRESENT     1
-#define PTF_DIRTY       2       /* store: need to write */
-#define PTF_USED        4       /* For clock algo only */
+#define PTF_PRESENT     1       /* reference */
+#define PTF_DIRTY       2       /* store: need to write */ /* modified */
+#define PTF_USED        4       /* For clock algo only */  
 
 struct pt_entry {
     int flags;                  /* see defines above */
@@ -70,5 +70,6 @@ struct vmem_struct {
 };
 
 #define SHMSIZE (sizeof(struct vmem_struct))
+#define SHM_KEY 97881
 
 #endif /* VMEM_H */

@@ -147,7 +147,7 @@ sighandler(int signo)
 void 
 vmem_init(void)
 {
-    key_t shm_key = 0;
+    key_t shm_key = SHM_KEY ;
     int   shm_id  = -1;
     /* Create shared memory */
     shm_key = ftok(SHMKEY, SHMPROCID);
@@ -230,7 +230,6 @@ store_page(int pt_idx)
   fseek(pagefile, offset, SEEK_SET);
   /* TODO: impl stuff */
   fwrite(pstart, sizeof(int), VMEM_PAGESIZE, pagefile);
-
 }
 
 void
@@ -363,9 +362,11 @@ void dump_pt(void)
   printf("Pagetable\n");  
   printf("====================\n");
   int i;
-  for(i = 0; i < ; i++) {
+  for(i = 0; i < VMEM_NPAGES; i++) {
     struct pt_entry entry = vmem->pt.entries[0]; 
-    printf("Frame: %d, Flags: %d, Count:%d\n", entry.frame, entry.flags, entry.count);
+    printf("Frame: %d, Flags: %d, Count:%d\n", 
+                                        entry.frame, entry.flags, entry.count);
+
   }
 }
 
