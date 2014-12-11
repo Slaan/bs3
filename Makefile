@@ -37,6 +37,8 @@ clean:
 	@$(rm) $(OBJECTS)
 	@$(rm) $(BINDIR)/$(VMAPPL)
 	@$(rm) $(BINDIR)/$(MMANAGER)
+	@$(rm) $(BINDIR)/*.txt
+	@$(rm) $(BINDIR)/*.bin
 	
 .PHONEY: remove
 remove: clean
