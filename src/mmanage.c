@@ -18,8 +18,6 @@
 #include "mmanage.h"
 #include "stdbool.h"
 
-#define VMEM_ALGO VMEM_ALGO_CLOCK
-
 struct vmem_struct *vmem = NULL;
 FILE *pagefile = NULL;
 FILE *logfile = NULL;
@@ -149,7 +147,7 @@ sighandler(int signo)
 void 
 vmem_init(void)
 {
-    key_t shm_key = 0;
+    key_t shm_key = SHM_KEY ;
     int   shm_id  = -1;
     /* Create shared memory */
     shm_key = ftok(SHMKEY, SHMPROCID);
@@ -232,7 +230,6 @@ store_page(int pt_idx)
   fseek(pagefile, offset, SEEK_SET);
   /* TODO: impl stuff */
   fwrite(pstart, sizeof(int), VMEM_PAGESIZE, pagefile);
-
 }
 
 void
@@ -348,17 +345,28 @@ find_free_bit(Bmword bmword, Bmword mask)
 void
 init_pagefile(const char* pfname)
 {
-    /* Create and open pagefile*/
-    pagefile = fopen(pfname, "w");
+  /* Create and open pagefile*/
+  pagefile = fopen(pfname, "w");
 }
 
+// removes pagefile
 void
 cleanup(void)
 {
-    
+  fclose(pagefile);
+  remove(MMANAGE_PFNAME);
 }
 
 void dump_pt(void)
 {
+  printf("Pagetable\n");  
+  printf("====================\n");
+  int i;
+  for(i = 0; i < VMEM_NPAGES; i++) {
+    struct pt_entry entry = vmem->pt.entries[0]; 
+    printf("Frame: %d, Flags: %d, Count:%d\n", 
+                                        entry.frame, entry.flags, entry.count);
 
+  }
 }
+
