@@ -64,8 +64,7 @@ void dump_pt(void);
 
 #define VOID_IDX -1
 
-/* Edit to modify algo, or remove line and provide
- * -DVMEM_ALGO ... compiler flag*/
-/* #define VMEM_ALGO VMEM_ALGO_FIFO */
+// choose between algorithms
+#define VMEM_ALGO VMEM_ALGO_CLOCK
 
 #endif /* MMANAGE_H */

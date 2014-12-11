@@ -18,8 +18,6 @@
 #include "mmanage.h"
 #include "stdbool.h"
 
-#define VMEM_ALGO VMEM_ALGO_CLOCK
-
 struct vmem_struct *vmem = NULL;
 FILE *pagefile = NULL;
 FILE *logfile = NULL;
@@ -348,17 +346,26 @@ find_free_bit(Bmword bmword, Bmword mask)
 void
 init_pagefile(const char* pfname)
 {
-    /* Create and open pagefile*/
-    pagefile = fopen(pfname, "w");
+  /* Create and open pagefile*/
+  pagefile = fopen(pfname, "w");
 }
 
+// removes pagefile
 void
 cleanup(void)
 {
-    
+  fclose(pagefile);
+  remove(MMANAGE_PFNAME);
 }
 
 void dump_pt(void)
 {
-
+  printf("Pagetable\n");  
+  printf("====================\n");
+  int i;
+  for(i = 0; i < ; i++) {
+    struct pt_entry entry = vmem->pt.entries[0]; 
+    printf("Frame: %d, Flags: %d, Count:%d\n", entry.frame, entry.flags, entry.count);
+  }
 }
+
