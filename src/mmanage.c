@@ -131,7 +131,7 @@ logger(struct logevent le)
 void 
 sighandler(int signo) 
 {
-  //signal_numer = signo;
+  signal_number = signo;
   switch(signo)
   {
     case SIGUSR1: allocate_page();
@@ -153,16 +153,28 @@ vmem_init(void)
     shm_key = ftok(SHMKEY, SHMPROCID);
     /* Set the IPC_CREAT flag */
     shm_id = shmget(shm_key, SHMSIZE, 0664 | IPC_CREAT);
-    /*TODO: implement me*/
+    if(shm_id == -1)
+    {
+      printf("ERROR IN SHMGET");
+    }
     vmem = shmat(shm_id, NULL, 0);
-    /*TODO: implement me*/
-    /* Init pagetable */
+    if(vmem == (char *) -1)
+    {
+      printf("ERROR IN SHM INIT");
+    }
+    // Init pagetable 
     vmem->adm.size        = VMEM_NPAGES * VMEM_PAGESIZE;
     vmem->adm.mmanage_pid = getpid();
     vmem->adm.shm_id      = shm_id;
-    /* shared amoung processes */
-    sem_init(&(vmem->adm.sema), 1, 0);
-    /*TODO: implement me */
+    // shared amoung processes 
+    if(sem_init(&(vmem->adm.sema), 1, 0) == -1)
+    {
+      printf("ERROR IN SEM INIT");
+      exit(EXIT_FAILURE);
+    }
+#ifdef DEBUG_MESSAGES
+    printf("pid %d", vmem->adm.mmanage_pid);
+#endif 
     return;
 }
 
@@ -172,13 +184,16 @@ allocate_page(void)
     int req_pageno        = vmem->adm.req_pageno;
     int frame             = VOID_IDX;
     int page_removed_idx  = VOID_IDX;
-    /* Page not allocated? */
     if(vmem->pt.entries[req_pageno].flags & PTF_PRESENT)
     {
-      // page fault?
+      // no page fault!
+      return;
     } 
-    /* Free farmes? */
+    /* find free page */
     frame = search_bitmap();
+#ifdef DEBUG_MESSAGES
+    printf("bitmap: frame %d\n", frame);
+#endif // DEBUG_MESSAGES
     if(frame != VOID_IDX) 
     {
       fprintf(stderr, "Found free frame no %d, allocation page\n", frame);
@@ -200,9 +215,15 @@ allocate_page(void)
     fetch_page(vmem->adm.req_pageno);
     /* Update page fault counter */
     vmem->adm.pf_count++;
-    /* Log action */
-    /* TODO: impl stuff */
-    /* Unblock application */
+    // log allocation
+    struct logevent le;
+    le.req_pageno     = vmem->adm.req_pageno;
+    le.replaced_page  = page_removed_idx;
+    le.alloc_frame    = frame;
+    le.pf_count       = vmem->adm.pf_count;
+    le.g_count        = vmem->adm.g_count;
+    logger(le);
+    // unblock application
     sem_post(&(vmem->adm.sema));
 }
 
@@ -215,7 +236,7 @@ fetch_page(int pt_idx)
   /* fseek: change file position indicator for the spcified stream */
   if(fseek(pagefile, offset, SEEK_SET) == -1) 
   {
-    perror("");
+    perror("couldnt find page");
     exit(EXIT_FAILURE);
   }
   fread(pstart, sizeof(int), VMEM_PAGESIZE, pagefile);
@@ -345,7 +366,7 @@ find_free_bit(Bmword bmword, Bmword mask)
 void
 init_pagefile(const char* pfname)
 {
-  /* Create and open pagefile*/
+  // Create and open pagefile
   pagefile = fopen(pfname, "w");
 }
 
@@ -355,6 +376,7 @@ cleanup(void)
 {
   fclose(pagefile);
   remove(MMANAGE_PFNAME);
+  fclose(logfile);
 }
 
 void dump_pt(void)
