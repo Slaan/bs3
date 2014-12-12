@@ -40,7 +40,7 @@ main(void)
 #endif /* DEBUG_MESSAGES */
   /* Open logfile */
   logfile = fopen(MMANAGE_LOGFNAME, "w");
-  if(!logfile) {
+  if(!logfile) t{
     perror("Error creating logfile");
     exit(EXIT_FAILURE);
   }
