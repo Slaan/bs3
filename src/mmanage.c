@@ -40,7 +40,7 @@ main(void)
 #endif /* DEBUG_MESSAGES */
   /* Open logfile */
   logfile = fopen(MMANAGE_LOGFNAME, "w");
-  if(!logfile) t{
+  if(!logfile) {
     perror("Error creating logfile");
     exit(EXIT_FAILURE);
   }
@@ -150,7 +150,7 @@ vmem_init(void)
     key_t shm_key = SHM_KEY ;
     int   shm_id  = -1;
     /* Create shared memory */
-    shm_key = ftok(SHMKEY, SHMPROCID);
+    //shm_key = ftok(SHMKEY, SHMPROCID);
     /* Set the IPC_CREAT flag */
     shm_id = shmget(shm_key, SHMSIZE, 0664 | IPC_CREAT);
     if(shm_id == -1)
@@ -161,6 +161,7 @@ vmem_init(void)
     if(vmem == (char *) -1)
     {
       printf("ERROR IN SHM INIT");
+      exit(EXIT_FAILURE);
     }
     // Init pagetable 
     vmem->adm.size        = VMEM_NPAGES * VMEM_PAGESIZE;
@@ -185,6 +186,7 @@ allocate_page(void)
     int frame             = VOID_IDX;
     int page_removed_idx  = VOID_IDX;
     if(vmem->pt.entries[req_pageno].flags & PTF_PRESENT)
+            
     {
       // no page fault!
       return;

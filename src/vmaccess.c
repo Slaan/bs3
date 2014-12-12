@@ -33,7 +33,7 @@ f(int address, bool save)
 }
 
 void vm_init(void){
-  key_t shm_key = 23456;
+  key_t shm_key = SHM_KEY;
   int shm_id = -1;
   shm_id = shmget(shm_key, SHMSIZE, 0664 | IPC_CREAT);
   if(shm_id == -1){
