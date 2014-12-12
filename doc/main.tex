@@ -38,7 +38,7 @@ Anstatt der Bitmap l\"asst sich eine Variable verwenden. Diese wird bei der Allo
 %\end{figure}
 
 \section{Wie entscheiden wir die geforderte Seite}
-\"Uber den flag "DVEM_ALGO" l\"asst sich bestimmen, mit welcher Strategie die pageersetzung erfolgen soll. Dabei gelten folgende Werte: 0=FIFO, 1=LRU, 2=CLOCK
+\"Uber den flag DVEM\_ALGO l\"asst sich bestimmen, mit welcher Strategie die pageersetzung erfolgen soll. Dabei gelten folgende Werte: 0=FIFO, 1=LRU, 2=CLOCK
 
 \section{Wie finden die Zugriffe auf die Pagefile mit fwrite und fread statt?}
 Die Befehl fwrite und fread nehmen 4 Parameter:
@@ -51,26 +51,26 @@ Man braucht nur eine Page in den Hauptspeicher zu schreiben (in unserem Fall in 
 
 \section{Aufrufreihenfolge der Funktionen in mmanage.h}
 mmanager wird zuerst initialisiert über die main-methode. In dieser werden folgende Methoden aufgerufen:
-init_pagefile
-vmem_init
+init\_pagefile
+vmem\_init
 sighandler wird initalisiert
 
 Anschließend werden über den signal handler die anderen Methoden erreicht. Die Signale bewirken folgende Prozeduren:
 SIGUSR1:
-allocate_page (sucht eine die aus adm.req_pageno geforderte page)
-	search_bitmap  (suche nach noch nicht verwendetem frame)
-		find_free_bit
-	find_remove_frame (entscheider für strategie für pageersetzung, da hier page aus pagefile.bin geladen werden muss)
-		find_remove_fifo OR
-		find_remove_lru OR
-		find_remove_clock OR
-	store_page (speicherung der zu ersetzenden page wenn dirtybit gesetzt)
-	update_pt (pagetable aktualisieren)
-	fetch_page (gesuchte page laden)
+allocate\_page (sucht eine die aus adm.req\_pageno geforderte page)
+	search\_bitmap  (suche nach noch nicht verwendetem frame)
+		find\_free\_bit
+	find\_remove\_frame (entscheider für strategie für pageersetzung, da hier page aus pagefile.bin geladen werden muss)
+		find\_remove\_fifo OR
+		find\_remove\_lru OR
+		find\_remove\_clock OR
+	store\_page (speicherung der zu ersetzenden page wenn dirtybit gesetzt)
+	update\_pt (pagetable aktualisieren)
+	fetch\_page (gesuchte page laden)
 	logger	(logging information in datei schreiben)
 	
 SIGUSR2:
-dump_pt (inhalt der pagetable ausgeben)
+dump\_pt (inhalt der pagetable ausgeben)
 
 SITINT:
 cleanup (schließen der files, freigabe des shared memory)
@@ -79,10 +79,8 @@ cleanup (schließen der files, freigabe des shared memory)
 
 
 \section{Welche Funktionen setzen die Flags Present, Dirty und Used?}
-Present: mmanage:update_pt
-Used: mmanage:update_pt
-Dirty: vmaccess: get_ad
+Present: mmanage:update\_pt
+Used: mmanage:update\_pt
+Dirty: vmaccess: get\_ad
 
-\bibliographystyle{alpha}
-\bibliography{./references}
 \end{document}
