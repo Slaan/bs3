@@ -158,11 +158,6 @@ vmem_init(void)
       printf("ERROR IN SHMGET");
     }
     vmem = shmat(shm_id, NULL, 0);
-    if(vmem == (char *) -1)
-    {
-      printf("ERROR IN SHM INIT");
-      exit(EXIT_FAILURE);
-    }
     // Init pagetable 
     vmem->adm.size        = VMEM_NPAGES * VMEM_PAGESIZE;
     vmem->adm.mmanage_pid = getpid();
@@ -293,13 +288,29 @@ find_remove_frame(void)
 int 
 find_remove_fifo(void)
 {
-
+  return vmem->adm.next_alloc_idx;
 }
 
 // least recently used (F6, S53)
 int
 find_remove_lru(void)
 {
+  // kopiert von haug
+  int i;
+  int remove_frame = VOID_IDX;
+  // smallest_count auf 'unendlich' setzen
+  unsigned int smallest_count = -1;
+  
+  // Nach dem Frame suchen, dessen Benutzung am l??ngsten zur??ckliegt 
+  for(i = 0; i < VMEM_NFRAMES; i++){
+    int page = vmem->pt.framepage[i];
+    if(vmem->pt.entries[page].count < smallest_count){
+      smallest_count = vmem->pt.entries[page].count; 
+      // Nummer des Frames mit dem, bis hier hin, "kleinsten" Zeitstempel setzen
+      remove_frame = i;
+    }
+  }
+  return remove_frame;
 
 }
 
